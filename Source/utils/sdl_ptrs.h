@@ -13,8 +13,12 @@
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_surface.h>
 #include <SDL3/SDL_version.h>
+#include <SDL3/SDL_ttf.h>
 #else
 #include <SDL.h>
+#ifndef USE_SDL1
+#include <SDL_ttf.h>
+#endif
 #ifdef USE_SDL1
 #include "utils/sdl2_to_1_2_backports.h"
 #else
@@ -96,5 +100,16 @@ struct SDLFreeDeleter {
  */
 template <typename T>
 using SDLUniquePtr = std::unique_ptr<T, SDLFreeDeleter<T>>;
+
+#ifndef USE_SDL1
+struct TTFFontDeleter {
+	void operator()(TTF_Font *font) const
+	{
+		TTF_CloseFont(font);
+	}
+};
+
+using TTFFontUniquePtr = std::unique_ptr<TTF_Font, TTFFontDeleter>;
+#endif
 
 } // namespace devilution

@@ -550,6 +550,10 @@ struct GraphicsOptions : OptionCategoryBase {
 	OptionEntryBoolean colorCycling;
 	/** @brief Use alternate nest palette. */
 	OptionEntryBoolean alternateNestArt;
+#ifndef USE_SDL1
+	/** @brief Use TrueType fonts for text rendering. */
+	OptionEntryBoolean modernFonts;
+#endif
 #if SDL_VERSION_ATLEAST(2, 0, 0)
 	/** @brief Use a hardware cursor (SDL2 only). */
 	OptionEntryBoolean hardwareCursor;

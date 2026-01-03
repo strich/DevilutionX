@@ -27,9 +27,11 @@
 #include "engine/rectangle.hpp"
 #include "engine/render/clx_render.hpp"
 #include "engine/render/primitive_render.hpp"
+#include "engine/render/ttf_font.hpp"
 #include "engine/surface.hpp"
 #include "engine/ticks.hpp"
 #include "game_mode.hpp"
+#include "options.h"
 #include "utils/algorithm/container.hpp"
 #include "utils/is_of.hpp"
 #include "utils/language.h"
@@ -42,6 +44,7 @@ namespace devilution {
 OptionalOwnedClxSpriteList pSPentSpn2Cels;
 
 namespace {
+
 
 constexpr char32_t ZWSP = U'\u200B'; // Zero-width space
 
@@ -620,6 +623,136 @@ uint32_t DoDrawString(const Surface &out, std::string_view text, Rectangle rect,
 	return static_cast<uint32_t>(remaining.data() - text.data());
 }
 
+#ifndef USE_SDL1
+SDL_Color PaletteIndexToSDLColor(text_color color)
+{
+	switch (color) {
+	case ColorWhite:
+		return { 255, 255, 255, 255 };
+	case ColorBlue:
+		return { 0, 0, 255, 255 };
+	case ColorRed:
+		return { 255, 0, 0, 255 };
+	case ColorGold:
+		return { 255, 215, 0, 255 };
+	case ColorBlack:
+		return { 0, 0, 0, 255 };
+	case ColorUiGold:
+		return { 255, 215, 0, 255 };
+	case ColorUiSilver:
+		return { 192, 192, 192, 255 };
+	case ColorUiGoldDark:
+		return { 128, 107, 0, 255 };
+	case ColorUiSilverDark:
+		return { 96, 96, 96, 255 };
+	case ColorButtonface:
+		return { 240, 240, 240, 255 };
+	case ColorButtonpushed:
+		return { 200, 200, 200, 255 };
+	default:
+		return { 255, 255, 255, 255 };
+	}
+}
+
+TTF_Font *GetTTFFont(GameFontTables sizeIndex)
+{
+	int size = FontSizes[sizeIndex];
+	static std::unordered_map<int, TTFFontUniquePtr> fontCache;
+	if (fontCache.find(size) == fontCache.end()) {
+		fontCache[size] = LoadTTFFont(size, "fonts/CharisSILB.ttf");
+	}
+	return fontCache[size].get();
+}
+
+uint32_t RenderTTF(const Surface &out, std::string_view text, Rectangle rect, TextRenderOptions opts)
+{
+	if (text.empty())
+		return 0;
+
+	GameFontTables sizeIndex = GetFontSizeFromUiFlags(opts.flags);
+	TTF_Font *font = GetTTFFont(sizeIndex);
+	if (font == nullptr)
+		return 0;
+
+	SDL_Color color = PaletteIndexToSDLColor(GetColorFromFlags(opts.flags));
+	static GlyphCache glyphCache;
+
+	int ascent = TTF_FontAscent(font);
+	int lineHeight = TTF_FontLineSkip(font);
+	if (opts.lineHeight != -1)
+		lineHeight = opts.lineHeight;
+
+	std::vector<std::string> lines;
+	std::string remaining(text);
+	while (!remaining.empty()) {
+		size_t newlinePos = remaining.find('\n');
+		std::string line = remaining.substr(0, newlinePos);
+
+		if (rect.size.width > 0) {
+			int w, h;
+			TTF_SizeUTF8(font, line.c_str(), &w, &h);
+			if (w > rect.size.width) {
+				// Simple wrap: find last space
+				// This is a very basic implementation
+				// TODO: Improve wrapping logic
+			}
+		}
+
+		lines.push_back(line);
+		if (newlinePos == std::string::npos)
+			break;
+		remaining = remaining.substr(newlinePos + 1);
+	}
+
+	int y = rect.position.y;
+	if (HasAnyOf(opts.flags, UiFlags::VerticalCenter)) {
+		int totalHeight = lines.size() * lineHeight;
+		y += (rect.size.height - totalHeight) / 2;
+	}
+
+	for (const auto &line : lines) {
+		int w, h;
+		TTF_SizeUTF8(font, line.c_str(), &w, &h);
+
+		int x = rect.position.x;
+		if (HasAnyOf(opts.flags, UiFlags::AlignCenter)) {
+			x += (rect.size.width - w) / 2;
+		} else if (HasAnyOf(opts.flags, UiFlags::AlignRight)) {
+			x += rect.size.width - w;
+		}
+
+		int curX = x;
+		std::string_view lineView = line;
+		while (!lineView.empty()) {
+			size_t cpLen;
+			char32_t ch = DecodeFirstUtf8CodePoint(lineView, &cpLen);
+			if (ch == Utf8DecodeError)
+				break;
+			lineView.remove_prefix(cpLen);
+
+			SDL_Surface *glyphSurf = glyphCache.GetGlyph(font, ch, color);
+			if (glyphSurf != nullptr) {
+				int minx, maxx, miny, maxy, advance;
+				if (TTF_GlyphMetrics(font, (Uint16)ch, &minx, &maxx, &miny, &maxy, &advance) == 0) {
+					SDL_Rect dstRect;
+					dstRect.x = out.region.x + curX + minx;
+					dstRect.y = out.region.y + y + ascent - maxy;
+					dstRect.w = glyphSurf->w;
+					dstRect.h = glyphSurf->h;
+
+					SDL_BlitSurface(glyphSurf, nullptr, out.surface, &dstRect);
+					curX += advance;
+				} else {
+					curX += glyphSurf->w;
+				}
+			}
+		}
+		y += lineHeight;
+	}
+	return text.length();
+}
+#endif
+
 } // namespace
 
 void LoadSmallSelectionSpinner()
@@ -634,6 +767,25 @@ void UnloadFonts()
 
 int GetLineWidth(std::string_view text, GameFontTables size, int spacing, int *charactersInLine)
 {
+#ifndef USE_SDL1
+	if (*GetOptions().Graphics.modernFonts) {
+		TTF_Font *font = GetTTFFont(size);
+		if (font != nullptr) {
+			std::string_view line = text;
+			size_t newlinePos = line.find('\n');
+			if (newlinePos != std::string_view::npos) {
+				line = line.substr(0, newlinePos);
+			}
+			std::string lineStr(line);
+			int w, h;
+			TTF_SizeUTF8(font, lineStr.c_str(), &w, &h);
+			if (charactersInLine != nullptr)
+				*charactersInLine = line.length(); // Approximation
+			return w;
+		}
+	}
+#endif
+
 	int lineWidth = 0;
 	CurrentFont currentFont;
 	uint32_t codepoints = 0;
@@ -832,6 +984,12 @@ std::string WordWrapString(std::string_view text, unsigned width, GameFontTables
  */
 uint32_t DrawString(const Surface &out, std::string_view text, const Rectangle &rect, TextRenderOptions opts)
 {
+#ifndef USE_SDL1
+	if (*GetOptions().Graphics.modernFonts) {
+		return RenderTTF(out, text, rect, opts);
+	}
+#endif
+
 	const GameFontTables size = GetFontSizeFromUiFlags(opts.flags);
 	const text_color color = GetColorFromFlags(opts.flags);
 

@@ -687,6 +687,7 @@ target_link_dependencies(libdevilutionx_spells PUBLIC
 
 add_devilutionx_object_library(libdevilutionx_text_render
   engine/render/text_render.cpp
+  engine/render/ttf_font.cpp
 )
 target_link_dependencies(libdevilutionx_text_render
   PUBLIC

@@ -36,6 +36,8 @@
 #include "utils/ui_fwd.h"
 #include "utils/utf8.hpp"
 
+#include "engine/render/ttf_font.hpp"
+
 #ifndef UNPACKED_MPQS
 #include "mpq/mpq_common.hpp"
 #include "mpq/mpq_reader.hpp"
@@ -128,6 +130,9 @@ void init_cleanup()
 	HasHellfireMpq = false;
 
 	NetClose();
+#ifndef USE_SDL1
+	QuitTTF();
+#endif
 }
 
 void init_create_window()
@@ -135,6 +140,9 @@ void init_create_window()
 	if (!SpawnWindow(PROJECT_NAME))
 		app_fatal(_("Unable to create main window"));
 	dx_init();
+#ifndef USE_SDL1
+	InitTTF();
+#endif
 	gbActive = true;
 #ifndef USE_SDL1
 	SDL_DisableScreenSaver();
