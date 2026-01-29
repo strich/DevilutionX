@@ -63,7 +63,7 @@ void FreeDlg()
 void DisplayFatalErrorAndExit(std::string_view title, std::string_view body)
 {
 	FreeDlg();
-	UiErrorOkDialog(title, body);
+	UiErrorOkDialog(title, body); // it's a good idea to put a breakpoint here
 	diablo_quit(1);
 }
 
