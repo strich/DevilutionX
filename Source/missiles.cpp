@@ -1485,6 +1485,8 @@ void AddSpectralArrow(Missile &missile, AddMissileParameter &parameter)
 
 		if (player._pClass == HeroClass::Rogue)
 			av += (player.getCharacterLevel() - 1) / 4;
+		else if (player._pClass == HeroClass::Archer)
+			av += (player.getCharacterLevel() * 1) / 2;
 		else if (player._pClass == HeroClass::Warrior || player._pClass == HeroClass::Bard)
 			av += (player.getCharacterLevel() - 1) / 8;
 
@@ -1745,6 +1747,8 @@ void AddElementalArrow(Missile &missile, AddMissileParameter &parameter)
 		const Player &player = Players[missile._misource];
 		if (player._pClass == HeroClass::Rogue)
 			av += (player.getCharacterLevel()) / 4;
+		else if (player._pClass == HeroClass::Archer)
+			av += (player.getCharacterLevel() * 1) / 2;
 		else if (IsAnyOf(player._pClass, HeroClass::Warrior, HeroClass::Bard))
 			av += (player.getCharacterLevel()) / 8;
 
@@ -1786,6 +1790,8 @@ void AddArrow(Missile &missile, AddMissileParameter &parameter)
 		}
 		if (player._pClass == HeroClass::Rogue)
 			av += (player.getCharacterLevel() - 1) / 4;
+		else if (player._pClass == HeroClass::Archer)
+			av += (player.getCharacterLevel() * 1) / 2;
 		else if (player._pClass == HeroClass::Warrior || player._pClass == HeroClass::Bard)
 			av += (player.getCharacterLevel() - 1) / 8;
 

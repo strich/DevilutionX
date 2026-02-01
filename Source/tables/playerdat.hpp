@@ -17,14 +17,25 @@ namespace devilution {
 enum class HeroClass : uint8_t {
 	Warrior,
 	Rogue,
-	Sorcerer,
 	Monk,
 	Bard,
+
 	Barbarian,
+	Paladin,
+	DemonKnight,
+	Kentoka,
+	Bushi,
+	Bhikkhu,
+	Archer,
+	Assassin,
+	Valkyrie,
+	Necromancer,
+	Priest,
+	Sorcerer,
 
 	NUM_MAX_CLASSES = std::numeric_limits<uint8_t>::max(),
 
-	LAST = Barbarian,
+	LAST = Sorcerer,
 };
 
 enum class PlayerClassFlag : uint8_t {

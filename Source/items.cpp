@@ -2560,6 +2560,8 @@ void CalcPlrDamageMod(Player &player)
 		player._pDamageMod = strDexMod / 200;
 		break;
 	case HeroClass::Monk:
+	case HeroClass::Kentoka:
+	case HeroClass::Bhikkhu:
 		if (player.isHoldingItem(ItemType::Staff) || (leftHandItem.isEmpty() && rightHandItem.isEmpty())) {
 			player._pDamageMod = strDexMod / 150;
 		} else {
@@ -2571,6 +2573,18 @@ void CalcPlrDamageMod(Player &player)
 			player._pDamageMod = strDexMod / 150;
 		} else if (player.isHoldingItem(ItemType::Bow)) {
 			player._pDamageMod = strDexMod / 250;
+		} else {
+			player._pDamageMod = strMod / 100;
+		}
+		break;
+	case HeroClass::Bushi:
+		if (player.isHoldingItem(ItemType::Sword)) {
+			player._pDamageMod = strMod / 100;
+			// Critical Strike: Bonus damage per level
+			player._pDamageMod += playerLevel;
+		} else if (player.isHoldingItem(ItemType::Bow)) {
+			player._pDamageMod = strMod / 250;
+			player._pDamageMod += playerLevel / 2;
 		} else {
 			player._pDamageMod = strMod / 100;
 		}
@@ -2855,6 +2869,14 @@ void CalcPlrItemVals(Player &player, bool loadgfx)
 	}
 
 	CalcPlrDamage(player, minDamage, maxDamage);
+
+	if (player._pClass == HeroClass::Kentoka && GetPlrAnimWeaponId(player) == PlayerWeaponGraphic::Unarmed) {
+		// Kentoka: Unarmed damage scales with level
+		int bonus = player.getCharacterLevel();
+		player._pIMinDam += bonus;
+		player._pIMaxDam += bonus;
+	}
+
 	CalcPlrPrimaryStats(player, strength, magic, dexterity, vitality);
 	player._pIAC = ac;
 	player._pIBonusDam = dam;

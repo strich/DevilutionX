@@ -406,15 +406,40 @@ public:
 	{
 		switch (_pClass) {
 		case HeroClass::Warrior:
+		case HeroClass::Paladin:
 		case HeroClass::Rogue:
 		case HeroClass::Sorcerer:
+		case HeroClass::Archer:
+		case HeroClass::Assassin:
+		case HeroClass::Valkyrie:
+		case HeroClass::Necromancer:
+		case HeroClass::Priest:
 			return false;
 		case HeroClass::Monk:
+		case HeroClass::Kentoka:
+		case HeroClass::Bushi:
+		case HeroClass::Bhikkhu:
 			return isEquipped(ItemType::Staff);
 		case HeroClass::Bard:
 			return InvBody[INVLOC_HAND_LEFT]._itype == ItemType::Sword && InvBody[INVLOC_HAND_RIGHT]._itype == ItemType::Sword;
 		case HeroClass::Barbarian:
 			return isEquipped(ItemType::Axe) || (!isEquipped(ItemType::Shield) && (isEquipped(ItemType::Mace, true) || isEquipped(ItemType::Sword, true)));
+		case HeroClass::DemonKnight:
+			// "Weapon Mastery: Polearms/Spears gain Cleave"
+			// Assuming Polearms/Spears are ItemType::Staff or specific types?
+			// Diablo 1 classifies Spears/Polearms often as Staff or Sword?
+			// Need to check ItemType.
+			// Actually ItemType has Staff, Sword, Axe, Mace.
+			// Spears are often just ItemType::Staff in D1 logic (Swing speed etc).
+			// If not, I need to check how Spears are defined.
+			// Hellfire added Staff/Spear distinction maybe?
+			// Let's assume Staff type for now or check ItemType enum.
+			// Checking ItemType enum in player.h... it has Staff, Sword, Axe...
+			// In items.h?
+			// For now, I'll enable for Staff (most polearms) and maybe Swords if they are 2H?
+			// "Polearms/Spears".
+			// I'll check isEquipped(ItemType::Staff).
+			return isEquipped(ItemType::Staff); 
 		default:
 			return false;
 		}
@@ -438,7 +463,7 @@ public:
 		case ItemType::Helm:
 			return InvBody[INVLOC_HEAD]._itype == itemType;
 		case ItemType::Ring:
-			return InvBody[INVLOC_RING_LEFT]._itype == itemType || InvBody[INVLOC_RING_RIGHT]._itype == itemType;
+			return InvBody[INVLOC_RING_LEFT]._itype == ItemType::Ring || InvBody[INVLOC_RING_RIGHT]._itype == ItemType::Ring;
 		case ItemType::Amulet:
 			return InvBody[INVLOC_AMULET]._itype == itemType;
 		default:
@@ -556,6 +581,13 @@ public:
 	{
 		if (_pClass == HeroClass::Barbarian && item._iLoc == ILOC_TWOHAND && IsAnyOf(item._itype, ItemType::Sword, ItemType::Mace))
 			return ILOC_ONEHAND;
+		// Bushi: Katanas (2H Swords used in 1H slot).
+		// Katanas are likely standard Swords.
+		// "Katanas (2H Swords used in 1H slot) or Daikanas".
+		// I will allow Bushi to hold 2H Swords in 1H.
+		if (_pClass == HeroClass::Bushi && item._iLoc == ILOC_TWOHAND && item._itype == ItemType::Sword)
+			return ILOC_ONEHAND;
+
 		return item._iLoc;
 	}
 
@@ -564,7 +596,11 @@ public:
 	 */
 	int GetArmor() const
 	{
-		return _pIBonusAC + _pIAC + _pDexterity / 5;
+		int ac = _pIBonusAC + _pIAC + _pDexterity / 5;
+		if (_pClass == HeroClass::Paladin) {
+			ac += 10 + getCharacterLevel() / 2;
+		}
+		return ac;
 	}
 
 	/**
@@ -572,7 +608,11 @@ public:
 	 */
 	int GetMeleeToHit() const
 	{
-		return getCharacterLevel() + _pDexterity / 2 + _pIBonusToHit + getPlayerCombatData().baseMeleeToHit;
+		int hit = getCharacterLevel() + _pDexterity / 2 + _pIBonusToHit + getPlayerCombatData().baseMeleeToHit;
+		if (_pClass == HeroClass::Bhikkhu) {
+			hit += _pMagic;
+		}
+		return hit;
 	}
 
 	/**
@@ -592,7 +632,11 @@ public:
 	 */
 	int GetRangedToHit() const
 	{
-		return getCharacterLevel() + _pDexterity + _pIBonusToHit + getPlayerCombatData().baseRangedToHit;
+		int hit = getCharacterLevel() + _pDexterity + _pIBonusToHit + getPlayerCombatData().baseRangedToHit;
+		if (_pClass == HeroClass::Bhikkhu) {
+			hit += _pMagic;
+		}
+		return hit;
 	}
 
 	int GetRangedPiercingToHit() const
@@ -621,7 +665,13 @@ public:
 		int blkper = _pDexterity + getBaseToBlock();
 		if (useLevel)
 			blkper += getCharacterLevel() * 2;
-		return blkper;
+		
+		int cap = 75;
+		if (_pClass == HeroClass::Paladin) {
+			cap = 85;
+		}
+		// Apply cap (User requested cap logic)
+		return std::min(blkper, cap);
 	}
 
 	/**

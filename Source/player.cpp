@@ -1546,6 +1546,15 @@ bool Player::CanUseItem(const Item &item) const
 	if (!IsItemValid(*this, item))
 		return false;
 
+	if (_pClass == HeroClass::Barbarian && item._itype == ItemType::HeavyArmor)
+		return false; // Cannot wear Plate Mail
+
+	if (_pClass == HeroClass::Kentoka && (item._itype == ItemType::MediumArmor || item._itype == ItemType::HeavyArmor))
+		return false; // Cannot wear Chest armor (Gi/Robe only - assuming Light)
+
+	if ((_pClass == HeroClass::Sorcerer || _pClass == HeroClass::Necromancer || _pClass == HeroClass::Priest) && (item._itype == ItemType::HeavyArmor || item._itype == ItemType::Shield))
+		return false; // Cannot wear Heavy Armor or Shields
+
 	return _pStrength >= item._iMinStr
 	    && _pMagic >= item._iMinMag
 	    && _pDexterity >= item._iMinDex;
@@ -2278,6 +2287,10 @@ void SetPlrAnims(Player &player)
 			break;
 		case PlayerWeaponGraphic::Staff:
 			player._pAFrames = plrAtkAnimData.staffFrames;
+			if (pc == HeroClass::Bhikkhu) {
+				// Faster attack speed with Staves
+				player._pAFrames = std::max<int>(1, player._pAFrames - 2);
+			}
 			player._pAFNum = plrAtkAnimData.staffActionFrame;
 			break;
 		}
@@ -2823,6 +2836,12 @@ void StripTopGold(Player &player)
 void ApplyPlrDamage(DamageType damageType, Player &player, int dam, int minHP /*= 0*/, int frac /*= 0*/, DeathReason deathReason /*= DeathReason::MonsterOrTrap*/)
 {
 	int totalDamage = (dam << 6) + frac;
+	if (player._pClass == HeroClass::Barbarian && damageType == DamageType::Physical) {
+		// Natural Resistance: Physical Damage reduced by Level %
+		int reduction = (totalDamage * player.getCharacterLevel()) / 100;
+		totalDamage -= reduction;
+	}
+
 	if (&player == MyPlayer && !player.hasNoLife()) {
 		LuaEvent("OnPlayerTakeDamage", &player, totalDamage, static_cast<int>(damageType));
 	}
@@ -3026,6 +3045,22 @@ void ProcessPlayers()
 				}
 				if (player.pManaShield && HasAnyOf(player._pIFlags, ItemSpecialEffect::NoMana)) {
 					NetSendCmd(true, CMD_REMSHIELD);
+				}
+
+				// Innate Regeneration for Demon Knight and Priest
+				if ((player._pClass == HeroClass::DemonKnight || player._pClass == HeroClass::Priest) && leveltype != DTYPE_TOWN) {
+					// Regenerate every ~2 seconds (40 ticks @ 50ms)
+					// We use a static counter here (shared) or just rely on randomness for simplicity/distribution
+					// "Slowly regenerates"
+					if (GenerateRnd(40) == 0) {
+						if (player._pHitPoints < player._pMaxHP) {
+							player._pHitPoints += 64; // 1.0 HP
+							if (player._pHitPoints > player._pMaxHP)
+								player._pHitPoints = player._pMaxHP;
+							player._pHPBase = player._pHitPoints + (player._pMaxHPBase - player._pMaxHP);
+							RedrawComponent(PanelDrawComponent::Health);
+						}
+					}
 				}
 			}
 

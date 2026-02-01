@@ -35,6 +35,7 @@
 #include "pfile.h"
 #include "tables/playerdat.hpp"
 #include "utils/enum_traits.h"
+#include "utils/is_of.hpp"
 #include "utils/language.h"
 #include "utils/sdl_geometry.h"
 #include "utils/str_cat.hpp"
@@ -177,15 +178,7 @@ void SelheroListSelect(size_t value)
 		for (size_t i = 0; i < GetNumPlayerClasses(); ++i) {
 			const HeroClass heroClass = static_cast<HeroClass>(i);
 
-			if (heroClass == HeroClass::Monk && !gbIsHellfire) {
-				continue;
-			}
-
-			if (heroClass == HeroClass::Bard && !HaveBardAssets() && !(*GetOptions().Gameplay.testBard)) {
-				continue;
-			}
-
-			if (heroClass == HeroClass::Barbarian && !HaveBarbarianAssets() && !(*GetOptions().Gameplay.testBarbarian)) {
+			if (IsAnyOf(heroClass, HeroClass::Warrior, HeroClass::Rogue, HeroClass::Monk, HeroClass::Bard)) {
 				continue;
 			}
 
@@ -475,9 +468,42 @@ const char *SelheroGenerateName(HeroClass heroClass)
 		},
 	};
 
+	int nameIndex = 0;
+	switch (heroClass) {
+	case HeroClass::Warrior:
+	case HeroClass::Paladin:
+	case HeroClass::DemonKnight:
+		nameIndex = 0;
+		break;
+	case HeroClass::Rogue:
+	case HeroClass::Bard:
+	case HeroClass::Assassin:
+	case HeroClass::Valkyrie:
+	case HeroClass::Archer:
+		nameIndex = 1;
+		break;
+	case HeroClass::Sorcerer:
+	case HeroClass::Necromancer:
+	case HeroClass::Priest:
+		nameIndex = 2;
+		break;
+	case HeroClass::Monk:
+	case HeroClass::Kentoka:
+	case HeroClass::Bushi:
+	case HeroClass::Bhikkhu:
+		nameIndex = 3;
+		break;
+	case HeroClass::Barbarian:
+		nameIndex = 5;
+		break;
+	default:
+		nameIndex = 0;
+		break;
+	}
+
 	const int iRand = rand() % 10;
 
-	return Names[static_cast<std::size_t>(heroClass) % 6][iRand];
+	return Names[nameIndex][iRand];
 }
 
 } // namespace

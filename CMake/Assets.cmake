@@ -197,6 +197,56 @@ set(devilutionx_assets
   txtdata/classes/warrior/sounds.tsv
   txtdata/classes/warrior/sprites.tsv
   txtdata/classes/warrior/starting_loadout.tsv
+  txtdata/classes/archer/animations.tsv
+  txtdata/classes/archer/attributes.tsv
+  txtdata/classes/archer/sounds.tsv
+  txtdata/classes/archer/sprites.tsv
+  txtdata/classes/archer/starting_loadout.tsv
+  txtdata/classes/assassin/animations.tsv
+  txtdata/classes/assassin/attributes.tsv
+  txtdata/classes/assassin/sounds.tsv
+  txtdata/classes/assassin/sprites.tsv
+  txtdata/classes/assassin/starting_loadout.tsv
+  txtdata/classes/bhikkhu/animations.tsv
+  txtdata/classes/bhikkhu/attributes.tsv
+  txtdata/classes/bhikkhu/sounds.tsv
+  txtdata/classes/bhikkhu/sprites.tsv
+  txtdata/classes/bhikkhu/starting_loadout.tsv
+  txtdata/classes/bushi/animations.tsv
+  txtdata/classes/bushi/attributes.tsv
+  txtdata/classes/bushi/sounds.tsv
+  txtdata/classes/bushi/sprites.tsv
+  txtdata/classes/bushi/starting_loadout.tsv
+  txtdata/classes/demonknight/animations.tsv
+  txtdata/classes/demonknight/attributes.tsv
+  txtdata/classes/demonknight/sounds.tsv
+  txtdata/classes/demonknight/sprites.tsv
+  txtdata/classes/demonknight/starting_loadout.tsv
+  txtdata/classes/kentoka/animations.tsv
+  txtdata/classes/kentoka/attributes.tsv
+  txtdata/classes/kentoka/sounds.tsv
+  txtdata/classes/kentoka/sprites.tsv
+  txtdata/classes/kentoka/starting_loadout.tsv
+  txtdata/classes/necromancer/animations.tsv
+  txtdata/classes/necromancer/attributes.tsv
+  txtdata/classes/necromancer/sounds.tsv
+  txtdata/classes/necromancer/sprites.tsv
+  txtdata/classes/necromancer/starting_loadout.tsv
+  txtdata/classes/paladin/animations.tsv
+  txtdata/classes/paladin/attributes.tsv
+  txtdata/classes/paladin/sounds.tsv
+  txtdata/classes/paladin/sprites.tsv
+  txtdata/classes/paladin/starting_loadout.tsv
+  txtdata/classes/priest/animations.tsv
+  txtdata/classes/priest/attributes.tsv
+  txtdata/classes/priest/sounds.tsv
+  txtdata/classes/priest/sprites.tsv
+  txtdata/classes/priest/starting_loadout.tsv
+  txtdata/classes/valkyrie/animations.tsv
+  txtdata/classes/valkyrie/attributes.tsv
+  txtdata/classes/valkyrie/sounds.tsv
+  txtdata/classes/valkyrie/sprites.tsv
+  txtdata/classes/valkyrie/starting_loadout.tsv
   txtdata/classes/classdat.tsv
   txtdata/items/item_prefixes.tsv
   txtdata/items/item_suffixes.tsv

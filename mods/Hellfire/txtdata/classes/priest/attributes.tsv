@@ -1,0 +1,22 @@
+Attribute	Value
+classFlags	
+baseStr	20
+baseMag	25
+baseDex	15
+baseVit	20
+maxStr	45
+maxMag	250
+maxDex	85
+maxVit	80
+blockBonus	10
+adjLife	30
+adjMana	-50
+lvlLife	1
+lvlMana	2
+chrLife	1
+chrMana	4
+itmLife	1
+itmMana	4
+baseMagicToHit	70
+baseMeleeToHit	50
+baseRangedToHit	50

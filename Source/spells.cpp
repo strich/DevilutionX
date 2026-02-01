@@ -162,9 +162,25 @@ void ConsumeSpell(Player &player, SpellID sn)
 			break;
 #endif
 		int ma = GetManaAmount(player, sn);
-		player._pMana -= ma;
-		player._pManaBase -= ma;
-		RedrawComponent(PanelDrawComponent::Mana);
+		if (player._pClass == HeroClass::DemonKnight) {
+			// Blood Magic: Spells cost Life
+			// We treat the mana cost as life cost (maybe unshifted? GetManaAmount returns fixed 16.6 format?)
+			// GetManaAmount returns shifted value (<< 6).
+			// ApplyPlrDamage expects unshifted? No, _pHitPoints is shifted.
+			if (player._pHitPoints < ma) {
+				// Should have been blocked by CheckSpell, but safety first
+				player._pHitPoints = 0;
+				SyncPlrKill(player, DeathReason::Player);
+			} else {
+				player._pHitPoints -= ma;
+				player._pHPBase -= ma;
+				RedrawComponent(PanelDrawComponent::Health);
+			}
+		} else {
+			player._pMana -= ma;
+			player._pManaBase -= ma;
+			RedrawComponent(PanelDrawComponent::Mana);
+		}
 		break;
 	}
 	if (sn == SpellID::BloodStar) {
@@ -201,7 +217,12 @@ SpellCheckResult CheckSpell(const Player &player, SpellID sn, SpellType st, bool
 		return SpellCheckResult::Fail_Level0;
 	}
 
-	if (player._pMana < GetManaAmount(player, sn) || HasAnyOf(player._pIFlags, ItemSpecialEffect::NoMana)) {
+	int manaCost = GetManaAmount(player, sn);
+	if (player._pClass == HeroClass::DemonKnight && st == SpellType::Spell) {
+		if (player._pHitPoints < manaCost) {
+			return SpellCheckResult::Fail_NoMana; // "Not enough mana" (conceptually Not enough Life)
+		}
+	} else if (player._pMana < manaCost || HasAnyOf(player._pIFlags, ItemSpecialEffect::NoMana)) {
 		return SpellCheckResult::Fail_NoMana;
 	}
 
