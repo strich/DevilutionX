@@ -219,9 +219,10 @@ SpellCheckResult CheckSpell(const Player &player, SpellID sn, SpellType st, bool
 
 	int manaCost = GetManaAmount(player, sn);
 	if (player._pClass == HeroClass::DemonKnight && st == SpellType::Spell) {
-		if (player._pHitPoints < manaCost) {
-			return SpellCheckResult::Fail_NoMana; // "Not enough mana" (conceptually Not enough Life)
+		if (player._pHitPoints <= 0) {
+			return SpellCheckResult::Fail_NoMana; // Cannot cast if already dead
 		}
+		// Blood Magic allows casting even if it kills the player
 	} else if (player._pMana < manaCost || HasAnyOf(player._pIFlags, ItemSpecialEffect::NoMana)) {
 		return SpellCheckResult::Fail_NoMana;
 	}

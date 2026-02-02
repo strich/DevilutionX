@@ -3048,7 +3048,7 @@ void ProcessPlayers()
 				}
 
 				// Innate Regeneration for Demon Knight and Priest
-				if ((player._pClass == HeroClass::DemonKnight || player._pClass == HeroClass::Priest) && leveltype != DTYPE_TOWN) {
+				if ((player._pClass == HeroClass::DemonKnight || player._pClass == HeroClass::Priest) && leveltype != DTYPE_TOWN && !player.hasNoLife()) {
 					// Regenerate every ~2 seconds (40 ticks @ 50ms)
 					// We use a static counter here (shared) or just rely on randomness for simplicity/distribution
 					// "Slowly regenerates"
