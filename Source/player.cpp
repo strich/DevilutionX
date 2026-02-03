@@ -573,7 +573,11 @@ bool PlrHitMonst(Player &player, Monster &monster, bool adjacentDamage = false)
 
 	const ClassAttributes &classAttributes = GetClassAttributes(player._pClass);
 	if (HasAnyOf(classAttributes.classFlags, PlayerClassFlag::CriticalStrike)) {
-		if (GenerateRnd(100) < player.getCharacterLevel()) {
+		int critChance = player.getCharacterLevel();
+		if (player._pClass == HeroClass::Bushi) {
+			critChance = player._pDexterity / 10;
+		}
+		if (GenerateRnd(100) < critChance) {
 			dam *= 2;
 		}
 	}
@@ -1465,6 +1469,9 @@ void ValidatePlayer()
 
 	myPlayer._pMemSpells &= msk;
 	myPlayer._pInfraFlag = false;
+	if (myPlayer._pClass == HeroClass::Assassin) {
+		myPlayer._pInfraFlag = true;
+	}
 }
 
 HeroClass GetPlayerSpriteClass(HeroClass cls)
@@ -1656,18 +1663,8 @@ int Player::GetCurrentAttributeValue(CharacterAttribute attribute) const
 
 int Player::GetMaximumAttributeValue(CharacterAttribute attribute) const
 {
-	const ClassAttributes &attr = getClassAttributes();
-	switch (attribute) {
-	case CharacterAttribute::Strength:
-		return attr.maxStr;
-	case CharacterAttribute::Magic:
-		return attr.maxMag;
-	case CharacterAttribute::Dexterity:
-		return attr.maxDex;
-	case CharacterAttribute::Vitality:
-		return attr.maxVit;
-	}
-	app_fatal("Unsupported attribute");
+	// Uncapped stats as per request (Safe limit 1000)
+	return 1000;
 }
 
 Point Player::GetTargetPosition() const
@@ -2835,12 +2832,26 @@ void StripTopGold(Player &player)
 
 void ApplyPlrDamage(DamageType damageType, Player &player, int dam, int minHP /*= 0*/, int frac /*= 0*/, DeathReason deathReason /*= DeathReason::MonsterOrTrap*/)
 {
-	int totalDamage = (dam << 6) + frac;
-	if (player._pClass == HeroClass::Barbarian && damageType == DamageType::Physical) {
-		// Natural Resistance: Physical Damage reduced by Level %
-		int reduction = (totalDamage * player.getCharacterLevel()) / 100;
-		totalDamage -= reduction;
+	// DFE (Damage From Enemies) Calculation - Flat Reduction
+	int dfe = 0;
+	if (player._pClass == HeroClass::Barbarian) {
+		dfe = (player._pVitality / 10) + player.getCharacterLevel();
+	} else if (player._pClass == HeroClass::Paladin) {
+		dfe = (player._pVitality / 15) + (player._pStrength / 20);
+	} else {
+		dfe = (player._pVitality / 20) + (player.getCharacterLevel() / 2);
 	}
+	
+	int totalDamage = (dam << 6) + frac;
+	
+	// Apply DFE (scaled to fixed point)
+	if (damageType == DamageType::Physical) {
+		totalDamage -= (dfe << 6);
+		if (totalDamage < 0) totalDamage = 0;
+	}
+
+	// Legacy Barbarian code removed (replaced by DFE which includes level scaling)
+
 
 	if (&player == MyPlayer && !player.hasNoLife()) {
 		LuaEvent("OnPlayerTakeDamage", &player, totalDamage, static_cast<int>(damageType));
@@ -3047,14 +3058,25 @@ void ProcessPlayers()
 					NetSendCmd(true, CMD_REMSHIELD);
 				}
 
-				// Innate Regeneration for Demon Knight and Priest
-				if ((player._pClass == HeroClass::DemonKnight || player._pClass == HeroClass::Priest) && leveltype != DTYPE_TOWN && !player.hasNoLife()) {
-					// Regenerate every ~2 seconds (40 ticks @ 50ms)
-					// We use a static counter here (shared) or just rely on randomness for simplicity/distribution
-					// "Slowly regenerates"
+				// Innate Regeneration for Demon Knight
+				if (player._pClass == HeroClass::DemonKnight && leveltype != DTYPE_TOWN && !player.hasNoLife()) {
 					if (GenerateRnd(40) == 0) {
 						if (player._pHitPoints < player._pMaxHP) {
 							player._pHitPoints += 64; // 1.0 HP
+							if (player._pHitPoints > player._pMaxHP)
+								player._pHitPoints = player._pMaxHP;
+							player._pHPBase = player._pHitPoints + (player._pMaxHPBase - player._pMaxHP);
+							RedrawComponent(PanelDrawComponent::Health);
+						}
+					}
+				}
+
+				// Innate Regeneration for Priest
+				if (player._pClass == HeroClass::Priest && leveltype != DTYPE_TOWN && !player.hasNoLife()) {
+					if (GenerateRnd(20) == 0) { // ~1 second
+						int regen = player._pMagic / 10;
+						if (regen > 0 && player._pHitPoints < player._pMaxHP) {
+							player._pHitPoints += regen << 6;
 							if (player._pHitPoints > player._pMaxHP)
 								player._pHitPoints = player._pMaxHP;
 							player._pHPBase = player._pHitPoints + (player._pMaxHPBase - player._pMaxHP);

@@ -2921,6 +2921,42 @@ void CalcPlrInv(Player &player, bool loadgfx)
 	}
 	CalcPlrItemVals(player, loadgfx);
 
+	// Innate Resistances
+	if (player._pClass == HeroClass::Paladin) {
+		// +1% All Res per 4 Levels
+		int resBonus = player.getCharacterLevel() / 4;
+		player._pMagResist += resBonus;
+		player._pFireResist += resBonus;
+		player._pLghtResist += resBonus;
+	} else if (player._pClass == HeroClass::Bhikkhu) {
+		// +1% Magic/Elemental Res per 3 Levels
+		int resBonus = player.getCharacterLevel() / 3;
+		player._pMagResist += resBonus;
+		player._pFireResist += resBonus;
+		player._pLghtResist += resBonus;
+	}
+	// Barbarian Phys Res is covered by DFE (or ignored as it's not a standard resist stat)
+
+	// Cap Resistances
+	player._pMagResist = std::clamp<int8_t>(player._pMagResist, 0, MaxResistance);
+	player._pFireResist = std::clamp<int8_t>(player._pFireResist, 0, MaxResistance);
+	player._pLghtResist = std::clamp<int8_t>(player._pLghtResist, 0, MaxResistance);
+
+	if (player._pClass == HeroClass::Assassin) {
+		player._pInfraFlag = true;
+	}
+
+	if (player._pClass == HeroClass::Archer) {
+		if (player._pDexterity >= 150) {
+			player._pIFlags |= ItemSpecialEffect::FastestAttack;
+		} else if (player._pDexterity >= 100) {
+			player._pIFlags |= ItemSpecialEffect::FasterAttack;
+		} else if (player._pDexterity >= 50) {
+			player._pIFlags |= ItemSpecialEffect::FastAttack;
+		}
+	}
+
+
 	if (&player == MyPlayer) {
 		// Now that stat gains from equipped items have been calculated, mark unusable scrolls etc
 		for (Item &item : InventoryAndBeltPlayerItemsRange { player }) {

@@ -1185,6 +1185,9 @@ void MonsterAttackPlayer(Monster &monster, Player &player, int hit, int minDam, 
 	hit += 2 * (monster.level(sgGameInitInfo.nDifficulty) - player.getCharacterLevel())
 	    + 30
 	    - ac;
+	if (player._pClass == HeroClass::Valkyrie) {
+		hit -= player._pDexterity / 10;
+	}
 	const int minhit = GetMinHit();
 	hit = std::max(hit, minhit);
 	int blkper = 100;

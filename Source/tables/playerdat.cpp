@@ -195,6 +195,12 @@ void LoadClassData(std::string_view classPath, ClassAttributes &attributes, Play
 	reader.readInt("baseMagicToHit", combat.baseMagicToHit);
 	reader.readInt("baseMeleeToHit", combat.baseMeleeToHit);
 	reader.readInt("baseRangedToHit", combat.baseRangedToHit);
+	if (classPath == "barbarian") {
+		// Hardcoded fix for Barbarian HP scaling (4 HP per Vit)
+		// 4.0 * 64 = 256
+		attributes.chrLife = 256;
+		attributes.itmLife = 256;
+	}
 }
 
 void LoadClassStartingLoadoutData(std::string_view classPath, PlayerStartingLoadoutData &startingLoadoutData)
@@ -400,7 +406,7 @@ uint32_t GetNextExperienceThresholdForLevel(unsigned level)
 
 uint8_t GetMaximumCharacterLevel()
 {
-	return ExperienceData.getMaxLevel();
+	return 99;
 }
 
 size_t GetNumPlayerClasses()
