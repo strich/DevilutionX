@@ -2,7 +2,6 @@
 	"name": "devilutionx",
 	"version-string": "1.6.0",
 	"dependencies": [
-		"fmt",
 		"lua",
 		"magic-enum"
 	],
